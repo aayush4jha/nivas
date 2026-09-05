@@ -21,24 +21,34 @@ export const ACCOUNT = {
   memberSince: "March 2025",
 };
 
-/** [variantId, qty per order, days between orders, orders placed] */
-const HISTORY: Array<[string, number, number, number]> = [
-  ["commercial-floor-cleaner-citrus--10-l", 3, 28, 6],
-  ["dishwash-liquid-lime--25-l", 1, 24, 5],
-  ["liquid-handwash-rose--5-l", 4, 35, 4],
-  ["garbage-bags-large-24-32-in--pack-of-30", 8, 21, 7],
-  ["heavy-duty-degreaser--5-l", 2, 45, 3],
-  ["nitrile-examination-gloves--large-box-of-100", 6, 30, 4],
-  ["multifold-paper-towels--pack-of-20-3-000-sheets", 3, 26, 5],
-  ["commercial-laundry-detergent--5-l", 2, 60, 2],
+/**
+ * [variantId, qty per order, days between orders, orders placed, cycle elapsed]
+ *
+ * The last figure is how far through its reorder cycle each item currently is:
+ * 1.0 means due today, above 1.0 overdue, below 1.0 still has runway. It is
+ * what decides whether an item appears under "Running low", so the spread here
+ * is chosen to exercise every state — a couple overdue, a couple due soon, the
+ * rest quiet. A demo account where nothing is ever due hides the one feature
+ * the dashboard exists to show.
+ */
+const HISTORY: Array<[string, number, number, number, number]> = [
+  ["commercial-floor-cleaner-citrus--10-l", 3, 28, 6, 1.22],
+  ["garbage-bags-large-24-32-in--pack-of-30", 8, 21, 7, 1.08],
+  ["dishwash-liquid-lime--25-l", 1, 24, 5, 0.96],
+  ["liquid-handwash-rose--5-l", 4, 35, 4, 0.86],
+  ["multifold-paper-towels--pack-of-20-3-000-sheets", 3, 26, 5, 0.78],
+  ["heavy-duty-degreaser--5-l", 2, 45, 3, 0.55],
+  ["nitrile-examination-gloves--large-box-of-100", 6, 30, 4, 0.40],
+  ["commercial-laundry-detergent--5-l", 2, 60, 2, 0.28],
 ];
 
-function datesFor(gapDays: number, count: number, now: Date): Date[] {
+function datesFor(gapDays: number, count: number, elapsed: number, now: Date): Date[] {
   // Jitter each gap slightly so the predictor sees realistic variance rather
   // than a perfect arithmetic sequence.
   const jitter = [0, -3, 2, -1, 4, -2, 1];
   const dates: Date[] = [];
-  let offset = Math.round(gapDays * 0.6); // days since the most recent order
+  // How long ago the most recent order was, as a fraction of the cycle.
+  let offset = Math.round(gapDays * elapsed);
   for (let i = 0; i < count; i++) {
     dates.push(new Date(now.getTime() - offset * 86_400_000));
     offset += gapDays + jitter[i % jitter.length];
@@ -47,12 +57,12 @@ function datesFor(gapDays: number, count: number, now: Date): Date[] {
 }
 
 export function trackedItems(now = new Date()): TrackedItem[] {
-  return HISTORY.map(([variantId, qty, gap, count]) => {
+  return HISTORY.map(([variantId, qty, gap, count, elapsed]) => {
     const product = PRODUCTS.find((p) => p.variants.some((v) => v.id === variantId));
     const variant = product?.variants.find((v) => v.id === variantId);
     if (!product || !variant) return null;
 
-    const orderDates = datesFor(gap, count, now);
+    const orderDates = datesFor(gap, count, elapsed, now);
     return { product, variant, qty, orderDates, signal: predictReorder(orderDates, now) };
   }).filter((x): x is TrackedItem => x !== null);
 }

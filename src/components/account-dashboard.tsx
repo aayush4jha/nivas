@@ -21,6 +21,9 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { ProductArt } from "./product-art";
 
+/** "1 day" / "6 days". Worth the four lines: this string is on screen a lot. */
+const days = (n: number) => `${n} ${n === 1 ? "day" : "days"}`;
+
 const STATUS_LABEL: Record<string, string> = {
   delivered: "Delivered",
   "out-for-delivery": "Out for delivery",
@@ -151,11 +154,13 @@ export function AccountDashboard() {
                           )}
                         >
                           {s.status === "overdue"
-                            ? `Due ${Math.abs(s.daysRemaining)} days ago`
-                            : `Due in ${s.daysRemaining} days`}
+                            ? `Due ${days(Math.abs(s.daysRemaining))} ago`
+                            : s.daysRemaining === 0
+                              ? "Due today"
+                              : `Due in ${days(s.daysRemaining)}`}
                           <span className="text-muted">
                             {" "}
-                            · you reorder about every {s.cycleDays} days
+                            · you reorder about every {days(s.cycleDays)}
                             {!s.confident && " (low confidence)"}
                           </span>
                         </p>
