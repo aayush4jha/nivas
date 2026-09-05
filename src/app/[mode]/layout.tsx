@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
+import { ModeMemory } from "@/components/mode-memory";
 import { SiteFooter } from "@/components/site-footer";
 import { MODES, isMode } from "@/lib/mode";
 
@@ -26,6 +27,7 @@ export default async function ModeLayout({
 
   return (
     <div data-mode={mode} className="flex min-h-dvh flex-col bg-paper text-ink">
+      <ModeMemory mode={mode} />
       <SiteHeader mode={mode} />
       <main className="flex-1">{children}</main>
       <SiteFooter mode={mode} />
