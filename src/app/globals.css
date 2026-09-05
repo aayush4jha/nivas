@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+/*
+ * NIVAS — design tokens.
+ *
+ * One palette, two temperaments. `data-mode` on the storefront wrapper swaps a
+ * handful of variables: Business stays cool, dense and precise; Premium goes
+ * warm, quiet and wide. Everything else — type scale, spacing, motion — is
+ * shared, so the two stores read as one company rather than two websites.
+ *
+ * The storefront deliberately commits to a light palette. A dark mode on a
+ * product catalogue costs photography consistency and buys very little.
+ */
+
+:root {
+  /* Neutrals — business default */
+  --paper: #f7f7f5;
+  --surface: #ffffff;
+  --surface-sunk: #f1f1ef;
+  --ink: #16181c;
+  --ink-soft: #4a4f57;
+  --muted: #767c85;
+  --line: #e2e2de;
+  --line-strong: #c9c9c3;
+
+  /* Brand */
+  --brand: #174d3b;
+  --brand-hover: #0f3a2c;
+  --brand-tint: #e8efeb;
+  --brand-ink: #ffffff;
+
+  /* Signals */
+  --warn: #8a5a12;
+  --warn-tint: #fbf2e2;
+  --danger: #8c2f26;
+
+  --radius: 4px;
+  --radius-lg: 8px;
+}
+
+/* Premium storefront: warmer paper, softer ink, clay accent, serif display. */
+[data-mode="premium"] {
+  --paper: #f4f1ea;
+  --surface: #fbfaf7;
+  --surface-sunk: #ece7dd;
+  --ink: #1d1a16;
+  --ink-soft: #554e45;
+  --muted: #837a6e;
+  --line: #e0d9cc;
+  --line-strong: #c7bcaa;
+
+  --brand: #6d4c36;
+  --brand-hover: #543a29;
+  --brand-tint: #efe7dd;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-sunk: var(--surface-sunk);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-tint: var(--brand-tint);
+  --color-brand-ink: var(--brand-ink);
+  --color-warn: var(--warn);
+  --color-warn-tint: var(--warn-tint);
+  --color-danger: var(--danger);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), Georgia, serif;
+
+  --radius-card: var(--radius);
+  --radius-panel: var(--radius-lg);
+}
+
+* {
+  border-color: var(--line);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv11", "ss01";
+}
+
+/* Display type: tight tracking is what makes large sizes look designed
+   rather than merely big. */
+.display {
+  letter-spacing: -0.033em;
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.serif-display {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+
+/* Small caps label used above section headings throughout the site. */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Tabular figures everywhere a price or quantity appears, so columns of
+   numbers line up and don't jitter when a value changes. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+::selection {
+  background: var(--brand);
+  color: var(--brand-ink);
+}

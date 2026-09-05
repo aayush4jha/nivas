@@ -1,3 +1,6 @@
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
 /** Formatting helpers. Every rupee value entering the UI passes through here. */
 
 const inr = new Intl.NumberFormat("en-IN", {
@@ -22,6 +25,10 @@ export function rupeesExact(paise: number): string {
   return inrPaise.format(paise / 100);
 }
 
-export function cn(...classes: Array<string | false | null | undefined>): string {
-  return classes.filter(Boolean).join(" ");
+/**
+ * Class merge. Uses tailwind-merge so a caller-supplied `px-6` reliably beats a
+ * component's default `px-4` instead of both landing in the class list.
+ */
+export function cn(...inputs: ClassValue[]): string {
+  return twMerge(clsx(inputs));
 }
