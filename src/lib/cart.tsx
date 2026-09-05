@@ -1,28 +1,43 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import type { AccountTier, CartLine } from "./types";
 import { PRODUCTS } from "@/data/products";
 import { priceCart, type CartTotals } from "./pricing";
+import { createPersistedStore, hydrationStore } from "./persisted-store";
 
 /**
  * Client-side cart.
  *
- * V1 keeps the cart in localStorage so the app is fully usable before Supabase
- * is provisioned. The shape is deliberately the same one the `carts` /
- * `cart_items` tables use, so moving to server-persisted carts is a swap of
- * this provider's internals, not a change to any component that consumes it.
+ * V1 persists to localStorage so the app is fully usable before Supabase is
+ * provisioned. The shape is deliberately the same one the `carts` /
+ * `cart_items` tables use, so moving to server-persisted carts replaces this
+ * provider's internals without touching a single consumer.
  */
 
-const STORAGE_KEY = "nivas.cart.v1";
-const ACCOUNT_KEY = "nivas.account.v1";
+const ACCOUNT_TIERS: AccountTier[] = ["retail", "business", "bulk", "enterprise"];
+
+function isCart(value: unknown): value is CartLine[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (l): l is CartLine =>
+        typeof l === "object" &&
+        l !== null &&
+        typeof (l as CartLine).productId === "string" &&
+        typeof (l as CartLine).variantId === "string" &&
+        typeof (l as CartLine).qty === "number",
+    )
+  );
+}
+
+function isTier(value: unknown): value is AccountTier {
+  return typeof value === "string" && (ACCOUNT_TIERS as string[]).includes(value);
+}
+
+const EMPTY_CART: CartLine[] = [];
+const cartStore = createPersistedStore<CartLine[]>("nivas.cart.v1", EMPTY_CART, isCart);
+const accountStore = createPersistedStore<AccountTier>("nivas.account.v1", "retail", isTier);
 
 interface CartContextValue {
   lines: CartLine[];
@@ -34,65 +49,41 @@ interface CartContextValue {
   setQty: (variantId: string, qty: number) => void;
   remove: (variantId: string) => void;
   clear: () => void;
-  /** False until localStorage has been read, so SSR and first paint agree. */
+  /** False during SSR and the hydration render. */
   hydrated: boolean;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [lines, setLines] = useState<CartLine[]>([]);
-  const [account, setAccountState] = useState<AccountTier>("retail");
-  const [hydrated, setHydrated] = useState(false);
+  const lines = useSyncExternalStore(
+    cartStore.subscribe,
+    cartStore.getSnapshot,
+    cartStore.getServerSnapshot,
+  );
+  const account = useSyncExternalStore(
+    accountStore.subscribe,
+    accountStore.getSnapshot,
+    accountStore.getServerSnapshot,
+  );
+  const hydrated = useSyncExternalStore(
+    hydrationStore.subscribe,
+    hydrationStore.getSnapshot,
+    hydrationStore.getServerSnapshot,
+  );
 
-  // Read persisted state after mount. Doing this in an effect rather than in
-  // useState's initialiser keeps the server and client first render identical.
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setLines(JSON.parse(raw) as CartLine[]);
-      const acct = localStorage.getItem(ACCOUNT_KEY);
-      if (acct === "business" || acct === "bulk" || acct === "enterprise") {
-        setAccountState(acct);
-      }
-    } catch {
-      // Private browsing, blocked site data, corrupt JSON — start empty.
-    }
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
-    } catch {
-      // Nothing useful to do; the cart still works for this page view.
-    }
-  }, [lines, hydrated]);
-
-  const setAccount = useCallback((tier: AccountTier) => {
-    setAccountState(tier);
-    try {
-      localStorage.setItem(ACCOUNT_KEY, tier);
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  const setAccount = useCallback((tier: AccountTier) => accountStore.set(tier), []);
 
   const add = useCallback((productId: string, variantId: string, qty = 1) => {
-    setLines((prev) => {
-      const existing = prev.find((l) => l.variantId === variantId);
-      if (existing) {
-        return prev.map((l) =>
-          l.variantId === variantId ? { ...l, qty: l.qty + qty } : l,
-        );
-      }
-      return [...prev, { productId, variantId, qty }];
-    });
+    cartStore.update((prev) =>
+      prev.some((l) => l.variantId === variantId)
+        ? prev.map((l) => (l.variantId === variantId ? { ...l, qty: l.qty + qty } : l))
+        : [...prev, { productId, variantId, qty }],
+    );
   }, []);
 
   const setQty = useCallback((variantId: string, qty: number) => {
-    setLines((prev) =>
+    cartStore.update((prev) =>
       qty <= 0
         ? prev.filter((l) => l.variantId !== variantId)
         : prev.map((l) => (l.variantId === variantId ? { ...l, qty } : l)),
@@ -100,15 +91,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const remove = useCallback((variantId: string) => {
-    setLines((prev) => prev.filter((l) => l.variantId !== variantId));
+    cartStore.update((prev) => prev.filter((l) => l.variantId !== variantId));
   }, []);
 
-  const clear = useCallback(() => setLines([]), []);
+  const clear = useCallback(() => cartStore.set(EMPTY_CART), []);
 
-  const totals = useMemo(
-    () => priceCart(lines, PRODUCTS, account),
-    [lines, account],
-  );
+  const totals = useMemo(() => priceCart(lines, PRODUCTS, account), [lines, account]);
 
   const value = useMemo(
     () => ({ lines, account, setAccount, totals, add, setQty, remove, clear, hydrated }),
