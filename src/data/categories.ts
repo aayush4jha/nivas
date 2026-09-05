@@ -1,0 +1,115 @@
+import type { Category } from "@/lib/types";
+
+export const CATEGORIES: Category[] = [
+  {
+    slug: "cleaning",
+    name: "Cleaning",
+    tagline: "Floors, surfaces, washrooms, disinfection",
+    icon: "SprayCan",
+    modes: ["business", "premium"],
+    subcategories: [
+      "Floor cleaners",
+      "Toilet cleaners",
+      "Glass cleaners",
+      "Multipurpose cleaners",
+      "Disinfectants",
+      "Degreasers",
+      "Phenyl",
+      "Bathroom cleaners",
+    ],
+  },
+  {
+    slug: "hygiene",
+    name: "Hygiene",
+    tagline: "Handwash, sanitiser, gloves, tissue",
+    icon: "Droplets",
+    modes: ["business", "premium"],
+    subcategories: [
+      "Handwash",
+      "Sanitisers",
+      "Disinfectants",
+      "Gloves",
+      "Tissues",
+      "Paper towels",
+    ],
+  },
+  {
+    slug: "kitchen",
+    name: "Kitchen",
+    tagline: "Dishwash, degreasers, scrubbers, cloths",
+    icon: "UtensilsCrossed",
+    modes: ["business", "premium"],
+    subcategories: [
+      "Dishwash",
+      "Kitchen cleaners",
+      "Degreasers",
+      "Scrubbers",
+      "Cleaning cloths",
+    ],
+  },
+  {
+    slug: "waste",
+    name: "Waste Management",
+    tagline: "Garbage bags, bin liners, bins",
+    icon: "Trash2",
+    modes: ["business"],
+    subcategories: ["Garbage bags", "Bin liners", "Waste bins"],
+  },
+  {
+    slug: "laundry",
+    name: "Laundry",
+    tagline: "Detergents, softeners, laundry chemicals",
+    icon: "Shirt",
+    modes: ["business", "premium"],
+    subcategories: ["Laundry detergent", "Fabric conditioner", "Laundry chemicals"],
+  },
+  {
+    slug: "equipment",
+    name: "Cleaning Equipment",
+    tagline: "Mops, wipers, brushes, buckets",
+    icon: "Wrench",
+    modes: ["business"],
+    subcategories: [
+      "Mops",
+      "Wipers",
+      "Brushes",
+      "Buckets",
+      "Spray bottles",
+      "Microfibre cloths",
+    ],
+  },
+  {
+    slug: "hospitality",
+    name: "Hospitality",
+    tagline: "Guest amenities for hotels and stays",
+    icon: "BedDouble",
+    modes: ["business"],
+    subcategories: [
+      "Guest soaps",
+      "Shampoo",
+      "Slippers",
+      "Dental kits",
+      "Towels",
+      "Amenities",
+    ],
+  },
+  {
+    slug: "premium",
+    name: "Premium",
+    tagline: "Everyday essentials, elevated",
+    icon: "Sparkles",
+    modes: ["premium"],
+    subcategories: [
+      "Premium handwash",
+      "Body wash",
+      "Shampoo",
+      "Conditioner",
+      "Home fragrance",
+      "Premium home cleaning",
+    ],
+  },
+];
+
+export function getCategory(slug: string): Category | undefined {
+  return CATEGORIES.find((c) => c.slug === slug);
+}
